@@ -1,0 +1,231 @@
+%! Author = thisi
+%! Date = 12/05/2024
+
+% Preamble
+\documentclass[11pt]{article}
+
+% Packages
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{
+    a4paper,
+    margin = 1in
+}
+\usepackage[english]{babel}
+\usepackage{pgf}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb}
+\usepackage{gensymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{authblk}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{color}
+\usepackage{tikzscale}
+\usepackage{tikz,tikz-cd}
+\usepackage{pgfplots}
+\usepackage{braket}
+\usepgfplotslibrary{external}
+\tikzexternalize
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{matrix, arrows}
+
+\graphicspath{ {images/} }
+
+\usepackage[nottoc]{tocbibind}
+
+\newcommand{\dbar}{d\hspace*{-0.08em}\bar{}\hspace*{0.1em}}
+\newcommand{\bO}{\mathcal{O}}
+
+\setlength{\parindent}{0em}
+\setlength{\parskip}{0em}
+
+\title{Biome Generation Research}
+\author{Joe Kent}
+
+\begin{document}
+
+    \maketitle
+
+    \tableofcontents
+
+    \section{Key Goals}\label{sec:key-goals}
+    The focus of this project can be outlined as: Generating a diverse range of planet like objects with diverse biomes and features.
+    This can be split into a number of sub goals: biomes, terrain, micro features, custom planet orientions/shapes, general climate structure and ability for customisation.
+    \subsection{Biomes}\label{subsec:biomes}
+    Earth has a wide range of biomes that are diverse and unique.
+    However, these have rules for how they generate, as such we need to find a way to generate these in a logic way that allows for natural looking biome placement.
+    Typically, there are three main factors that impact what a biome is like: Altitude, Water content (Precipitation, River flow, humidity) and Temperature.
+    The temperature will mainly depend on the input from the planet's star and its orientation.
+    The water content will depend on the wind, temperature, altitude and general planet water levels.
+    See terrain (Section~\ref{subsec:terrain})to understand the approach fo altitude.
+    Thus, the goal will be to generate these three factors in a realistic way to then impact the biome choice.
+    The following is a list of biomes of interest and their general temperature, water content and altitude:
+    \begin{table}
+        \centering
+        \caption{Table of biomes}
+        \label{tab:biomes}
+        \begin{tabular}{c | c c c c c c}
+            Biome & Min Tem & Max Tem & Min Water & Max Water & Min Alt & Max Alt\\
+            \hline
+            Desert & &  &  &  &  & \\
+            Savanna & &  &  &  &  & \\
+            Temperate Forest & &  &  &  &  & \\
+            Rainforest & &  &  &  &  & \\
+            Deciduous Forest & &  &  &  &  & \\
+            Tundra & &  &  &  &  & \\
+            Ice Sheet & &  &  &  &  & \\
+            Temperate & &  &  &  &  & \\
+            Wetlands & &  &  &  &  & \\
+            Swamps & &  &  &  &  & \\
+            Highland Forest & &  &  &  &  & \\
+            Shallow Seas & &  &  &  &  & \\
+            Deep Oceans & &  &  &  &  & \\
+            Coral Reefs & &  &  &  &  & \\
+            Kelp Forest & &  &  &  &  & \\
+            Snow Peaks & &  &  &  &  &
+        \end{tabular}
+    \end{table}
+    However, even within these there is a wide diversity.
+    For example, there is rocky desert, dune desert and mountainous desert.
+    Each of these look very different, yet they are all classified as `desert'.
+    Thus, it will be the aim of he terrain to generate this variety.
+
+    \subsection{Terrain}\label{subsec:terrain}
+    Within terrain there are a number of features which result in the diversity that we see.
+    The following is a list of them.
+    \begin{enumerate}
+        \item Mountains
+        \item Lakes
+        \item Rivers
+        \item Valleys
+        \item Canyons
+        \item Lone Mountians
+        \item Glaciers
+        \item Islands
+        \item Continents
+    \end{enumerate}
+    Now to generate these features the base techniques that I plan to use are Techtonic Plates, Perlin Noise and Erosion.
+    The Techtonic Plates should generate Continents, Islands, Mountain Ranges and Lone Mountains (or at least with some geothermal simulation).
+    Perlin Noise will add some roughness to make it feel more like terrain.
+    Erosion will be used to make Valleys, Canyons, Glaciers and Rivers.
+    Erosion will likely be the most time consuming aspect of the project, both in implementation and compute time.
+    \subsection{Micro Features}\label{subsec:micro-features}
+    Within terrain there is a large diversity.
+    For example, sometimes there is a lone mountain that was an old volcano, sometimes it is active.
+    These features bring more life and diversity to a world but are not often large enough to be shown on a world map.
+    Here is a list of these features.
+    \begin{enumerate}
+        \item Brine Lakes
+        \item Caves
+        \item Volcano
+        \item Underwater Vent
+        \item Braided Rivers
+        \item Water fall
+        \item Peaks
+    \end{enumerate}
+    The plan is to generate these things arround when the biomes are generated.
+    Each feature will only be able to generate when specific conditions are met.
+    \subsection{Custom Planet orientations and Shapes}\label{subsec:custom-planet-orientations-and-shapes}
+    Spherical planets (or at least squished spheres) are what we commonly see in real life.
+    However, there are more extreme examples of these or theoretically phyiscally posible shapes.
+    I believe that these are the most interesting examples that one can obtain.
+    Here is a list of the planned implemented features
+    \begin{enumerate}
+        \item spherical
+        \item squished sphere
+        \item tidally locked planet
+        \item lonely planet
+        \item binary suns
+        \item ring world
+        \item dyson world
+        \item toriodal planet
+        \item flat planet
+        \item disk planet
+    \end{enumerate}
+    Most of these versions simply modify the temperature model or the slice where the techtonics or noise is generated from.
+    However, some of these (like the toriodal planet) have modified gravity which would impact the generation of the planet.
+    \subsection{Climate Structure}\label{subsec:climate-structure}
+    The climate structure would mainly consist of wind and ocean currents.
+    This would likely also impact the water content, temperature map and thus, biome map.
+    The main impacts will likely be the wind cells, coriolis effect, pressure (from temperature and altitude).
+    \subsection{User customisation}\label{subsec:user-customisation}
+    This would mostly be things like custom biomes and custom initial heightmaps but could extend to adjusting biome placements or adding magical effects.
+    To do the first two, storing biome types in csv and allowing the user to use a greyscale image to generate when generating the height map.
+
+    \section{Research}
+    General review~\cite{galin2019review}
+
+    \subsection{Tectonics}
+    One method of doing as seen in~\cite{cordonnier2016large}.
+    \begin{enumerate}
+        \item Generate a graph of points
+        \item Compute flow between the points in the graph.
+        \item Modify the trees if needed
+        \item uplift and apply erosion
+        \item Return to step 1 until convergence
+    \end{enumerate}
+    This method would result in mountains and rivers.
+    However this requires an uplift step that is not outlined.
+    Most online versions use Voronoi tessalation.
+    Will likely use this and slicing a 3d version of the tessalation.
+    Generate a loose grid of coordinates
+
+    There are two types of plates, oceanic and continental plate, oceanic is denser.
+    As well as this each plate has velocity.
+    Plates that are next to each other have plate boundaries.
+    These plate boundaries come in the following forms:
+    Transform boundaries are boundaries that move parallel to the plate boundary.
+    Not many features are at these.
+    Colliding boundaries have a number of different results depending on what is colliding.
+    First type is subduction which happens when oceanic crust meets continental crust.
+    The oceanic crust sinks creating volcanos and the plate rising on the continental plates and a trench on the oceanic side .
+    When two oceanic plates collide we get the same thing except the volcanos form islands and usually the older crust stays on top
+    WHen two continental plates collide they form massive mountains.
+    When two plates diverge they produce a rift zone which has volcanic activity in the center (it also forms dips in the land).
+    There are also hot spots which could be anywhere.
+    This hot spot does not move with the plates
+
+
+    \section{Implementation}\label{sec:implementation}
+
+    \subsection{Plan}\label{subsec:plan}
+    Here is the vague plan, getting one of the steps done a week would be good (although some will likely take way less than that).
+    \begin{itemize}
+        \item Step 1: Research and Implement Techtonics
+        \item Step 2: Implement Perlin Noise
+        \item Check Point 1: Are we getting the general terrain shape that we want?
+        \item Step 3: Research and Implement Temperature Map
+        \item Step 4: Research and Implement Wind Map
+        \item Step 5: Research and Implement Precipitation
+        \item Check Point 2: Does the weather map look realistic?
+        \item Step 6: Research and Implement Erosion
+        \item Check Point 3: Are all the terrain features appearing?
+        \item Step 7: Generate Biome Map
+        \item Check Point 4: Does the biome map look realistic and good?
+        \item Step 8: Generate Micro Features
+        \item Check Point 5: Is the diversity and concentration of these features good?
+        \item Step 9: Research and Implement Planet Variety
+        \item Step 10: Implement Customisation
+    \end{itemize}
+    Also the algorithm should produce something that looks good, has a large diversity, can generate realistic looking planets and can generate a planet in 10minutes to an hour on my hardware.
+    \subsection{Tectonics}\label{subsec:tectonics}
+    Use a Voronoi Tessalation in 3d space to get the tectonic plate shapes.
+    For each plate generate a plate type, velocity and weight (for the oceanic plates).
+    Generate a grid of points with their heights (oceanic plates are lower) and assign each to their plates.
+    Generate nodes with more detail near the plate edges.
+    Now the simulation:
+    generate the uplift
+    Simulate node flows
+    Run an erosion algorithm
+
+    To generate the points we generate a set of random points in the domain $[-\pi/2, \pi/2]\otimes[0, 2*\pi]\subset \R^2$ before converting this to cartesian coordinates.
+    We will then store the data in a quadtree to allow for points to quickly compute which is the closest
+    \section{Test}\label{sec:test}
+    \subsection{Test 1}
+    Testing plate movement, am getting massive buildups at 0, $\pi$ and $2\pi$ not sure why
+    \bibliographystyle{alpha}
+    \bibliography{bibliograhpy}
+
+\end{document}
