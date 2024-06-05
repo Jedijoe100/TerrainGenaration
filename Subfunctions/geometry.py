@@ -23,3 +23,9 @@ def pitch_yaw_rotation_matrix(x):
         [np.cos(x[1]) * np.sin(x[0]), np.cos(x[0]), np.sin(x[1]) * np.cos(x[0])],
         [-np.sin(x[1]), 0, np.cos(x[1])]
     ])
+
+def even_sphere_points(number):
+    indices = np.arange(0, number) + 0.5
+    phi = np.arccos(1-2*indices/number)
+    theta = np.pi * (1+ 5**0.5)* indices
+    return np.array([np.cos(theta)*np.sin(theta), np.sin(theta)*np.sin(phi), np.cos(phi)]).transpose()
