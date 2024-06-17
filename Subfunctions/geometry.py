@@ -3,8 +3,8 @@ import numpy as np
 
 def geographic_to_cartesian(points):
     return np.array(
-        [np.sin(points[:, 0]) * np.cos(points[:, 1]), np.cos(points[:, 0]) * np.cos(points[:, 1]),
-         np.sin(points[:, 1])]).transpose()
+        [np.sin(points[:, 0]) * np.sin(points[:, 1]), np.cos(points[:, 0]) * np.sin(points[:, 1]),
+         np.cos(points[:, 1])]).transpose()
 
 
 def cartesian_to_geographic(points):
