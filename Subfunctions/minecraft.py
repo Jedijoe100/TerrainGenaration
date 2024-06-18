@@ -25,35 +25,48 @@ def generate_block_references(level, blocks):
         block_dictionary[block] = level.block_palette.get_add_block(universal_block_1) 
     return block_dictionary
 
-def chunk_based_generation(level, resolution, grid):
+def chunk_based_generation(level, resolution, grid, biomes):
+    print(list(level.biome_palette))
     blur_factor = 2 #have this depend on the detail of grid and the 
-    chunk_grid = resolution//16
+    chunk_grid = np.array(resolution)//16
     height_min = np.min(grid.height)
     height_dispersion = (np.max(grid.height)-height_min)
-    blocks = generate_block_references(level, ['stone', 'dirt', 'grass_block','gravel', 'water'])
+    blocks = generate_block_references(level, ['stone', 'dirt', 'grass_block','gravel', 'water', 'sand', 'snow_block', 'packed_ice'])
     processed_sea_level = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(grid.settings['SEA_LEVEL']-height_min)/height_dispersion
-    for cx in range(chunk_grid[x]):
+    for cx in range(chunk_grid[0]):
         for cz in range(chunk_grid[1]):
+            print(cx, cz, (cx-1)*2*np.pi/chunk_grid[0], (cx+2)*2*np.pi/chunk_grid[0],(cz-1)*np.pi/chunk_grid[1], (cz+2)*np.pi/chunk_grid[1])
             xx, yy = np.meshgrid(np.linspace(
                 (cx-1)*2*np.pi/chunk_grid[0], (cx+2)*2*np.pi/chunk_grid[0], 48), np.linspace(
-                (cx-1)*2*np.pi/chunk_grid[0], (cz+2)*2*np.pi/chunk_grid[1], 48))
-            indices = grid.grid_tree.query(geographic_to_cartesian(np.array([xx.flatten(), yy.flatten()]).transpose())).reshape((48, 48))
-            height_map = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(gaussian_filter(grid.height[indices], sigma=blur_factor)-height_min)/height_dispersion
+                (cz-1)*np.pi/chunk_grid[1], (cz+2)*np.pi/chunk_grid[1], 48))
+            indices = grid.grid_tree.query(geographic_to_cartesian(np.array([xx.flatten(), yy.flatten()]).transpose()))[1].reshape((48, 48))
+            height_map = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(grid.height[indices]-height_min)/height_dispersion
+            biome = grid.biome[indices[16:33,16:33]]
+            minecraft_biome = biomes.biome_correspond[biome]
             try:
                 chunk = level.get_chunk(cx, cz, "minecraft:overworld")
             except ChunkDoesNotExist:
                 chunk = Chunk(cx, cz)
                 level.put_chunk(chunk, "minecraft:overworld")
                 chunk = level.get_chunk(cx, cz, "minecraft:overworld")
-            chunk.block()
             for x in range(16):
                 for z in range(16):
-                    chunk.block
-                    if height_map[x, z] > self.settings['SEA_LEVEL']:
-                        chunk.blocks[x, int(height_map[16+x,16+z])-3:int(height_map[16+x,16+z]), z] = blocks['dirt']
-                        chunk.blocks[x, int(height_map[16+x,16+z]), z] = blocks['grass_block']
+                    chunk.biomes[x, :, z] = level.biome_palette[minecraft_biome[x, z]]
+                    chunk.blocks[x, -63:int(height_map[16+x,16+z])-3, z] = blocks['stone']
+                    if height_map[16+x, 16+z] > processed_sea_level:
+                        if biome[x, z] == 23:
+                            chunk.blocks[x, int(height_map[16+x,16+z])-3:int(height_map[16+x,16+z])+1, z] = blocks['sand']
+                        elif biome[x, z] in [8, 7]:
+                            chunk.blocks[x, int(height_map[16+x,16+z])-3:int(height_map[16+x,16+z]), z] = blocks['dirt']
+                            chunk.blocks[x, int(height_map[16+x,16+z]), z] = blocks['snow_block']
+                        else:
+                            chunk.blocks[x, int(height_map[16+x,16+z])-3:int(height_map[16+x,16+z]), z] = blocks['dirt']
+                            chunk.blocks[x, int(height_map[16+x,16+z]), z] = blocks['grass_block']
+                        #add lakes
                     else:
                         chunk.blocks[x, int(height_map[16+x,16+z])-3:int(height_map[16+x,16+z]), z] = blocks['gravel']
                         chunk.blocks[x, int(height_map[16+x,16+z]):processed_sea_level, z] = blocks['water']
-            chuck.changed = True
-    level.save()
+                        if biome[x, z] == 6:
+                            chunk.blocks[x, int(processed_sea_level)-1, z] = blocks['packed_ice']
+            chunk.changed = True
+    return level

@@ -6,6 +6,7 @@ from scipy.spatial.transform import Rotation
 from scipy.ndimage import gaussian_filter
 from geometry import geographic_to_cartesian, cartesian_to_geographic, even_sphere_points
 from minecraft import chunk_based_generation
+from display import display_sub_axes, store_data_template
 from biome import Biomes
 from PIL import Image
 import time
@@ -25,25 +26,27 @@ SETTINGS = {
     'VOLCANIC_FACTOR': 1000,
     'PLATE_VELOCITY_FACTOR': 20,
     'WEATHER_STEPS': 200,
-    'WIND_FACTOR': 100,
-    'TEMPERATURE_RADIATE': 0.02,
+    'WIND_FACTOR': 50,
+    'TEMPERATURE_RADIATE': 0.01,
     'SEA_LEVEL': 0.5,
     'VOLCANIC_SPOTS': 5,
     'PLATE_AGEING': 0.01,
-    'HUMIDITY_FACTOR': 50,
+    'HUMIDITY_FACTOR': 10,
     'POINT_NUMBER': 20,
     'DETAIL': 10000,
-    'PLATE_STEPS': 2,
+    'PLATE_STEPS': 10,
     'SEED': 2,
     'SEMI_MAJOR_AXIS': 1,
     'ECCENTRICITY': 0,
     'SOLAR_ENERGY': 2,
-    'ANGLE_FACTOR': 0.50,
-    'PLATE_RESETS': 1,
+    'ANGLE_FACTOR': 0.02,
+    'PLATE_RESETS': 10,
     'CELL_NUMBER': 3,
     'SPIN': 1,
     'WIND_SPEED': 0,
-    'HEIGHT_TEMP_DROP': 10,
+    'HEIGHT_TEMP_DROP': 5,
+    'ADJACENT_FACTOR': 16,
+    'ALTITUDE_FACTOR': 20
 }
 MINECRAFT_SETTINGS = {
     'HEIGHT_DIFF': 100,
@@ -93,7 +96,9 @@ class Stationary_Grid:
         self.weather_index = self.Wind_Map()
         self.layer_2 = np.zeros(self.size*2)
         self.layer_2[self.size:] = 1
-        _, self.adjacent_points = self.grid_tree.query(self.grid, 8)
+        self.water_flow = np.zeros(self.size)
+        self.time_taken = 0
+        _, self.adjacent_points = self.grid_tree.query(self.grid, self.settings['ADJACENT_FACTOR'])
         print(f"Grid Initialisation: {time.time()-start}s")
     
 
@@ -185,21 +190,13 @@ class Stationary_Grid:
         # update temperature
         self.temperature_update(time_of_year)
         # update humidity
-        self.humidity[:self.size] += np.minimum(1, np.maximum(0, self.temperature[:self.size]/100)
-                                    )*(self.height <= self.settings['SEA_LEVEL'])/self.settings['HUMIDITY_FACTOR']
+        self.humidity[:self.size] += (self.height <= self.settings['SEA_LEVEL'])/self.settings['HUMIDITY_FACTOR'] + self.water_level/self.settings['HUMIDITY_FACTOR']
+        self.water_level -= self.water_level/self.settings['HUMIDITY_FACTOR']
         # Transferring temperature to new point and humidity to new point (modifying temperature if going up or downhill)
         height_diff = np.zeros(self.size*2)
         height_diff[:self.size] = self.height[self.weather_index[:self.size]%self.settings['DETAIL']] - self.height
-        new_temperature = self.temperature[self.weather_index] - height_diff/10
+        new_temperature = self.temperature[self.weather_index] - height_diff/self.settings['ALTITUDE_FACTOR']
         new_humidity = self.humidity[self.weather_index]
-        """
-        xx, yy = np.meshgrid(np.linspace(
-            0, 2*np.pi, self.resolution[0]), np.linspace(0, np.pi, self.resolution[1]))
-        _, indices = self.grid_tree.query(geographic_to_cartesian(
-            np.array([xx.flatten(), yy.flatten()]).transpose()))
-        plt.contourf(xx, yy,self.temperature[indices].reshape(self.resolution))
-        plt.show()
-        """
         # computing precipitation
         precipitation = np.maximum(
             0, new_humidity - (np.minimum(100, np.maximum(0, new_temperature -self.settings['HEIGHT_TEMP_DROP']*self.layer_2)))/100)
@@ -207,28 +204,33 @@ class Stationary_Grid:
         net_precipitation = precipitation[:self.size] + precipitation[self.size:]
         self.water_level += net_precipitation * \
             (net_precipitation > 0) * (self.height > self.water_level)
-        self.net_precipitation += net_precipitation
-        self.weather_steps += 1
         # radiate temperature
         new_temperature -= ((new_humidity*100/(np.minimum(100,
                              np.maximum(0.0001, new_temperature)))) < self.settings['CLOUD_POINT']) * self.settings['TEMPERATURE_RADIATE']
         #blurring humidity and temperature
         tem_temperature = new_temperature*0.6
         tem_humidity = new_humidity*0.6
+        tem_precipitation = net_precipitation*0.6
         for i in range(self.size):
-            tem_temperature[self.adjacent_points[i]] += new_temperature[i]*np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
-            tem_temperature[self.adjacent_points[i]+self.size] += new_temperature[i+self.size]*np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
-            tem_humidity[self.adjacent_points[i]] += new_humidity[i] * np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
-            tem_humidity[self.adjacent_points[i]+self.size] += new_humidity[i+self.size] * np.array([0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05])
+            tem_temperature[self.adjacent_points[i]] += new_temperature[i]*0.4/self.settings['ADJACENT_FACTOR']
+            tem_temperature[self.adjacent_points[i]+self.size] += new_temperature[i+self.size]*0.4/self.settings['ADJACENT_FACTOR']
+            tem_humidity[self.adjacent_points[i]] += new_humidity[i] *0.4/self.settings['ADJACENT_FACTOR']
+            tem_humidity[self.adjacent_points[i]+self.size] += new_humidity[i+self.size] *0.4/self.settings['ADJACENT_FACTOR']
+            tem_precipitation[self.adjacent_points[i]] += net_precipitation[i] *0.4/self.settings['ADJACENT_FACTOR']
         self.temperature = tem_temperature
         self.humidity = tem_humidity
+        self.net_precipitation += net_precipitation
+        self.weather_steps += 1
         #store temperature data
         if final:
             precipitation_max = np.max(net_precipitation)+0.0000000000001
+            temp_categories = np.array([-1000, -10, 0, 10, 20, 30, 40, 50, 60, 10000])
+            humidity_categories = np.array([0, 0.2, 0.4, 0.6, 0.8, 1])
+            temperature_values = 5+np.digitize(self.temperature, temp_categories)
+            precipitation_values = np.digitize(net_precipitation/precipitation_max, humidity_categories)
             for i in range(self.size):
-                temp_categories = np.array([-1000, -10, 0, 10, 20, 30, 40, 50, 60, 10000])
-                self.biome_blocks[i,6+ np.digitize(self.height, temp_categories)] += 1
-                self.biome_blocks[i,1+ int(np.floor(5*net_precipitation[i]/precipitation_max))] += 1
+                self.biome_blocks[i,int(temperature_values[i])] += 1
+                self.biome_blocks[i,int(precipitation_values[i])] += 1
 
 
 
@@ -244,9 +246,7 @@ class Stationary_Grid:
         # this is the angle the current tilt of the planet wrt the sun
         angle_between_sun = Planet_angle * np.cos(year_progress)
         # this computes the amount of time in the sun
-        ratio = (1-np.abs(self.grid[:, 2]))*np.cos(angle_between_sun) / \
-            np.sqrt(1-np.square(self.grid[:, 2]))
-        proportion_day = 1/2#(2*(np.arcsin(np.maximum(-1, np.minimum(1, ratio)))))/(2*np.pi)
+        proportion_day = 1/2 - np.sin(self.grid_2d[:, 1])*np.tan(angle_between_sun)/(2*np.sin(self.grid_2d[:, 1]))
         # energy at each point
         solar_energy = np.sin(np.minimum(np.maximum(
             self.grid_2d[:, 1] - angle_between_sun, 0), np.pi))*self.settings['SOLAR_ENERGY']*proportion_day/(4*np.pi*np.square(Distance))
@@ -303,6 +303,7 @@ class Stationary_Grid:
             self.weather(i/self.settings['WEATHER_STEPS'],True)
         print(f"Evolve Net time: {time.time()-start}s")
         self.biomes()
+        self.time_taken = time.time()-start
     
     def biomes(self):
         alt_categories = np.array([0, 0.3, 0.6, 0.8, 0.95, 1, 1.5, 10000])
@@ -329,119 +330,33 @@ class Stationary_Grid:
         # display a height, temperature, humidity, water map on a single figure, store image and data
         xx, yy = np.meshgrid(np.linspace(
             0, 2*np.pi, self.resolution[0]), np.linspace(0, np.pi, self.resolution[1]))
-        _, indices = self.grid_tree.query(geographic_to_cartesian(
-            np.array([xx.flatten(), yy.flatten()]).transpose()))
-        height_map = self.height[indices].reshape(self.resolution)
+        print(np.shape(xx), np.shape(yy))
+        indices = self.grid_tree.query(geographic_to_cartesian(
+            np.array([xx.flatten(), yy.flatten()]).transpose()))[1]
         fig, axs = plt.subplots(3, 2)
-        print(np.min(height_map), np.max(height_map))
-        axs[0, 0].contourf(xx, yy, height_map, levels=50)
-        cb_00 = axs[0, 0].set_title('Height Map')
-        temperature_map = self.temperature[indices].reshape(self.resolution)
-        print(np.min(temperature_map), np.max(temperature_map))
-        cb_01 = axs[2, 0].contourf(xx, yy, temperature_map)
-        axs[2, 0].set_title('Temperature Map')
-        temperature_map = self.temperature[indices + self.size].reshape(self.resolution)
-        print(np.min(temperature_map), np.max(temperature_map))
-        axs[2, 1].contourf(xx, yy, temperature_map)
-        cb_01 = axs[2, 1].set_title('High Alt Temperature Map')
-        humidity_map = self.humidity[indices].reshape(self.resolution)
-        print(np.min(humidity_map), np.max(humidity_map))
-        axs[0, 1].contourf(xx, yy, humidity_map)
-        cb_10 = axs[0, 1].set_title('Humidity Map')
-        rain_fall = self.net_precipitation[indices].reshape(
-            self.resolution)/self.weather_steps
-        print(np.min(rain_fall), np.max(rain_fall))
-        axs[1, 0].contourf(xx, yy, rain_fall)
-        cb_11 = axs[1, 0].set_title('Precipitation Map')
-        water_map = self.water_level[indices].reshape(self.resolution)
-        print(np.min(water_map), np.max(water_map))
-        axs[1, 1].contourf(xx, yy, water_map)
-        cb_11 = axs[1, 1].set_title('Water Map')
+        display_sub_axes(axs[0, 0], xx, yy, self.height[indices].reshape(self.resolution), 'Height Map')
+        display_sub_axes(axs[0, 1], xx, yy, self.humidity[indices].reshape(self.resolution), 'Humidity Map')
+        display_sub_axes(axs[1, 0], xx, yy, self.net_precipitation[indices].reshape(self.resolution), 'Precipitation Map')
+        display_sub_axes(axs[1, 1], xx, yy, self.water_level[indices].reshape(self.resolution), 'Water Map')
+        display_sub_axes(axs[2, 0], xx, yy, self.temperature[indices].reshape(self.resolution), 'Temperature Map')
+        display_sub_axes(axs[2, 1], xx, yy, self.temperature[indices+self.size].reshape(self.resolution), 'High Alt Temperature Map')
         plt.savefig(
             os.path.join(FILE_PATH, IMAGE_DIRECTORY, f"test_{self.settings['ID']}.png"))
         plt.show()
-        with open(os.path.join(FILE_PATH, "settings_test.csv"), "a") as file:
-            file.write(f"{self.settings['ID']},{np.min(height_map)},{np.max(height_map)},{np.min(temperature_map)},{np.max(temperature_map)},{np.min(humidity_map)},{np.max(humidity_map)},{np.min(water_map)},{np.max(water_map)},{np.min(rain_fall)},{np.max(rain_fall)}\n")
-        print(self.biome)
         self.generate_biome_image()
+    
+    def store_data(self):
+        with open(os.path.join(FILE_PATH, "settings_test.csv"), "a") as file:
+            file.write(f"{self.settings['ID']},{self.time_taken},{store_data_template([self.height, self.humidity, self.net_precipitation, self.water_level, self.temperature[:self.size], self.temperature[self.size:]])}\n")
+        
     
     def export_to_minecraft_world(self):
         shutil.rmtree(os.path.join(FILE_PATH, '..\\current_world'))
         shutil.copytree(os.path.join(FILE_PATH, '..\\biome_template'), os.path.join(FILE_PATH, '../current_world'))
         level = load_level('current_world')
-        xx, yy = np.meshgrid(np.linspace(
-            0, 2*np.pi, MINECRAFT_SETTINGS['WORLD_RESOLUTION'][0]), np.linspace(0, np.pi, MINECRAFT_SETTINGS['WORLD_RESOLUTION'][1]))
-        _, indices = self.grid_tree.query(geographic_to_cartesian(
-            np.array([xx.flatten(), yy.flatten()]).transpose()))
-        height_map = self.height[indices].reshape(MINECRAFT_SETTINGS['WORLD_RESOLUTION'])
-        water_map = self.water_level[indices].reshape(MINECRAFT_SETTINGS['WORLD_RESOLUTION'])
-        height_map = gaussian_filter(height_map, sigma=2)
-        processed_height = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(height_map-np.min(height_map))/(np.max(height_map)-np.min(height_map))
-        processed_sea_level = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(self.settings['SEA_LEVEL']-np.min(height_map))/(np.max(height_map)-np.min(height_map))
-        processed_water_map = MINECRAFT_SETTINGS['HEIGHT_DIFF'] * water_map/(np.max(height_map)-np.min(height_map))
-        print(processed_sea_level, np.min(processed_height), np.min(height_map), self.settings['SEA_LEVEL'])
-        (
-            universal_block_1,
-            universal_block_entity_1,
-            universal_extra_1,
-        ) = level.translation_manager.get_version("java", (1, 19, 4)).block.to_universal(
-            Block("minecraft", "stone")
-        )
-        stone = level.block_palette.get_add_block(universal_block_1) 
-        (
-            universal_block_1,
-            universal_block_entity_1,
-            universal_extra_1,
-        ) = level.translation_manager.get_version("java", (1, 19, 4)).block.to_universal(
-            Block("minecraft", "dirt")
-        )
-        dirt = level.block_palette.get_add_block(universal_block_1) 
-        (
-            universal_block_1,
-            universal_block_entity_1,
-            universal_extra_1,
-        ) = level.translation_manager.get_version("java", (1, 19, 4)).block.to_universal(
-            Block("minecraft", "grass_block")
-        )
-        grass = level.block_palette.get_add_block(universal_block_1) 
-        (
-            universal_block_1,
-            universal_block_entity_1,
-            universal_extra_1,
-        ) = level.translation_manager.get_version("java", (1, 19, 4)).block.to_universal(
-            Block("minecraft", "gravel")
-        )
-        gravel = level.block_palette.get_add_block(universal_block_1) 
-        (
-            universal_block_1,
-            universal_block_entity_1,
-            universal_extra_1,
-        ) = level.translation_manager.get_version("java", (1, 19, 4)).block.to_universal(
-            Block("minecraft", "water")
-        )
-        water = level.block_palette.get_add_block(universal_block_1) 
-        for x in range(MINECRAFT_SETTINGS['WORLD_RESOLUTION'][0]):
-            for z in range(MINECRAFT_SETTINGS['WORLD_RESOLUTION'][1]):
-                cx, cz = block_coords_to_chunk_coords(x, z)
-                try:
-                    chunk = level.get_chunk(cx, cz, "minecraft:overworld")
-                except ChunkDoesNotExist:
-                    new_chunk = Chunk(cx, cz)
-                    level.put_chunk(new_chunk, "minecraft:overworld")
-                    chunk = level.get_chunk(cx, cz, "minecraft:overworld")
-                offset_x, offset_z = x - 16 * cx, z - 16 * cz
-                chunk.blocks[offset_x, -63:int(processed_height[x,z])-3, offset_z] = stone
-                if height_map[x, z] > self.settings['SEA_LEVEL']:
-                    if processed_water_map[x, z] >= 100:
-                        chunk.blocks[offset_x, int(processed_height[x,z])-3:int(processed_height[x,z]), offset_z] = gravel
-                        chunk.blocks[offset_x, int(processed_height[x,z]):int(processed_height[x,z])+processed_water_map[x, z], offset_z] = water
-                    else:
-                        chunk.blocks[offset_x, int(processed_height[x,z])-3:int(processed_height[x,z]), offset_z] = dirt
-                        chunk.blocks[offset_x, int(processed_height[x,z]), offset_z] = grass
-                else:
-                    chunk.blocks[offset_x, int(processed_height[x,z])-3:int(processed_height[x,z]), offset_z] = gravel
-                    chunk.blocks[offset_x, int(processed_height[x,z]):processed_sea_level, offset_z] = water
-                chunk.changed = True
+        for biome in BIOMES.minecraft_biomes:
+            level.biome_palette.register(f'universal_minecraft:{biome}')
+        level = chunk_based_generation(level, MINECRAFT_SETTINGS['WORLD_RESOLUTION'], self, BIOMES)
         level.save()
         level.close()
 
@@ -450,6 +365,7 @@ def thread_function(settings):
         test = Stationary_Grid(setting)
         test.evolve()
         test.display()
+        test.store_data()
 
 
 if __name__ == '__main__':

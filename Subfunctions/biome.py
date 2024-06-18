@@ -13,9 +13,11 @@ class Biomes:
     def __init__(self) -> None:
         biomes = np.array(pd.read_csv(os.path.join(FILE_PATH, BIOME_PATH)))
         self.biomes = biomes
-        self.altitude_category = biomes[:,3:5]
-        self.water_minimum = biomes[:,5]
-        self.biome_vector = biomes[:,5:]
+        self.minecraft_biomes = list(set(biomes[:,3]))
+        self.biome_correspond = np.array([self.minecraft_biomes.index(value) for value in biomes[:, 3]])
+        self.altitude_category = biomes[:,4:6]
+        self.water_minimum = biomes[:,6]
+        self.biome_vector = biomes[:,6:]
         self.map_colours = np.array([ImageColor.getcolor(biome, 'RGB') for biome in biomes[:,2]])
     
     def biome_test(self, alt_category, element_vector):
