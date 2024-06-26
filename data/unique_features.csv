@@ -1,0 +1,7 @@
+ID,FEATURE,MIN_ALT,MAX_ALT,MIN_VOLCANISM,ALT_GRADIENT,MIN_WATER_PASSED
+0,Volcano,5,6,1,-1,0
+1,Brine Lakes,0,1,0,0,0
+2,Underwater Vent,0,4,1,-1,0
+3,Braided Rivers,5,5,0,0.1,0.5
+4,Waterfall,5,6,0,1,0.5
+5,Peaks,6,6,0,0,0

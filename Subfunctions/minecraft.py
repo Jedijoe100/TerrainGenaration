@@ -1,10 +1,12 @@
 import numpy as np
-from geometry import geographic_to_cartesian
+from Subfunctions.geometry import geographic_to_cartesian
 from scipy.ndimage import gaussian_filter
 from amulet.api.block import Block
 from amulet.api.errors import ChunkDoesNotExist
-from amulet.api.chunk import Chunk
-
+from amulet.api.chunk import Chunk, Biomes
+from amulet import load_level
+import os
+import shutil
 
 MINECRAFT_SETTINGS = {
     'HEIGHT_DIFF': 100,
@@ -35,6 +37,7 @@ def chunk_based_generation(level, resolution, grid, biomes):
     processed_sea_level = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(grid.settings['SEA_LEVEL']-height_min)/height_dispersion
     for cx in range(chunk_grid[0]):
         for cz in range(chunk_grid[1]):
+            print(chunk_grid)
             print(cx, cz, (cx-1)*2*np.pi/chunk_grid[0], (cx+2)*2*np.pi/chunk_grid[0],(cz-1)*np.pi/chunk_grid[1], (cz+2)*np.pi/chunk_grid[1])
             xx, yy = np.meshgrid(np.linspace(
                 (cx-1)*2*np.pi/chunk_grid[0], (cx+2)*2*np.pi/chunk_grid[0], 48), np.linspace(
@@ -51,7 +54,7 @@ def chunk_based_generation(level, resolution, grid, biomes):
                 chunk = level.get_chunk(cx, cz, "minecraft:overworld")
             for x in range(16):
                 for z in range(16):
-                    chunk.biomes[x, :, z] = level.biome_palette[minecraft_biome[x, z]]
+                    chunk.biomes[x, :, z] = Biomes(minecraft_biome[x, z])
                     chunk.blocks[x, -63:int(height_map[16+x,16+z])-3, z] = blocks['stone']
                     if height_map[16+x, 16+z] > processed_sea_level:
                         if biome[x, z] == 23:
@@ -70,3 +73,14 @@ def chunk_based_generation(level, resolution, grid, biomes):
                             chunk.blocks[x, int(processed_sea_level)-1, z] = blocks['packed_ice']
             chunk.changed = True
     return level
+
+
+def export_to_minecraft_world(self, file_path, biomes):
+        shutil.rmtree(os.path.join(file_path, '.\\current_world'))
+        shutil.copytree(os.path.join(file_path, '.\\biome_template'), os.path.join(file_path, './current_world'))
+        level = load_level('current_world')
+        for biome in biomes.minecraft_biomes:
+            level.biome_palette.register(f'universal_minecraft:{biome}')
+        level = chunk_based_generation(level, MINECRAFT_SETTINGS['WORLD_RESOLUTION'], self, biomes)
+        level.save()
+        level.close()
