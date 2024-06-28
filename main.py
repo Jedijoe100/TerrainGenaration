@@ -1,17 +1,20 @@
+import os
+import threading
+import time
+
 import numpy as np
 import pandas as pd
 from scipy.spatial import KDTree
 from scipy.spatial.transform import Rotation
-from Subfunctions.geometry import cartesian_to_geographic, even_sphere_points
-from Subfunctions.weather import Wind_Map, weather
-from Subfunctions.erosion import erosion
-from Subfunctions.tectonics import eruptions, plate_reset, move_plates
-from Subfunctions.minecraft import export_to_minecraft_world
-from Subfunctions.display import display_biome, display_layers, store_data_template
+
 from Subfunctions.biome import Biomes, biomes
-import time
-import os
-import threading
+from Subfunctions.display import (display_biome, display_layers,
+                                  store_data_template)
+from Subfunctions.erosion import erosion
+from Subfunctions.geometry import cartesian_to_geographic, even_sphere_points
+from Subfunctions.minecraft import export_to_minecraft_world
+from Subfunctions.tectonics import eruptions, move_plates, plate_reset
+from Subfunctions.weather import Wind_Map, weather
 
 FILE_PATH = os.path.dirname(os.path.abspath(__file__))
 IMAGE_DIRECTORY = "./images"
@@ -51,7 +54,16 @@ SETTINGS = {
 BIOMES = Biomes(os.path.join(FILE_PATH, DATA_DIRECTORY, "biomes.csv"))
 
 class Stationary_Grid:
+    """
+    Class that stores the data for the Terrain Generation
+    """
+    
     def __init__(self, settings) -> None:
+        """
+        Setting up the Grid points.
+        Accepts settings as a dictionary of values.
+        """
+        
         start = time.time()
         if settings:
             self.settings = settings
@@ -92,6 +104,9 @@ class Stationary_Grid:
         print(f"Grid Initialisation: {time.time()-start}s")
 
     def evolve(self):
+        """
+        Moves plates, causes volcanic eruptions, erodes and processes weather.
+        """
         # Compute all plate steps
         start = time.time()
         for _ in range(int(self.settings['PLATE_RESETS'])):
@@ -110,10 +125,19 @@ class Stationary_Grid:
         self.time_taken = time.time()-start
     
     def store_data(self):
+        """
+        Store maximum and minimums in a csv file.
+        """
+
         with open(os.path.join(FILE_PATH, "settings_test.csv"), "a") as file:
             file.write(f"{self.settings['ID']},{self.time_taken},{store_data_template([self.height, self.humidity, self.net_precipitation, self.water_level, self.temperature[:self.size], self.temperature[self.size:]])}\n")
 
 def thread_function(settings):
+    """
+    Allows for multiple runs do be done on multiple cores.
+    Not working properly likely due to a large number of processes already being multi threaded.
+    """
+
     path = os.path.join(FILE_PATH, IMAGE_DIRECTORY)
     for setting in settings:
         test = Stationary_Grid(setting)
@@ -132,7 +156,7 @@ if __name__ == '__main__':
         path = os.path.join(FILE_PATH, IMAGE_DIRECTORY)
         display_layers(test, path)
         display_biome(test, BIOMES, path)
-        export_to_minecraft_world(test, FILE_PATH,BIOMES)
+        export_to_minecraft_world(test, FILE_PATH, BIOMES)
     else:
         thread_settings = [[] for _ in range(THREAD_NUMBER)]
         test_settings = pd.read_csv(os.path.join(FILE_PATH, "settings.csv"), dtype={'ID': np.int32, 'WEATHER_STEP': np.int32, 'VOLCANIC_SPOTS': np.int32})

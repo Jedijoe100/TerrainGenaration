@@ -2,63 +2,76 @@ import numpy as np
 from scipy.spatial import KDTree
 from scipy.spatial.transform import Rotation
 
-def eruptions(self):
+def eruptions(grid):
+    """
+    Computing the volcanic eruptions from techtonics and hot spots
+    """
+
     # compute volcano spots
-    _, indices = self.grid_tree.query(self.volcanism_spots)
+    _, indices = grid.grid_tree.query(grid.volcanism_spots)
     for index in indices:
-        self.height[index] += self.rng.random() / \
-            self.settings['VOLCANIC_FACTOR']
+        grid.height[index] += grid.rng.random() / \
+            grid.settings['VOLCANIC_FACTOR']
     # compute volcano chains
-    self.volcanism = self.volcanism*self.rng.random(self.size)*2
-    self.height += self.volcanism * \
-        self.rng.random(self.size)*(self.volcanism >= 1) / \
-        self.settings['VOLCANIC_FACTOR']
-    self.volcanism = self.volcanism * (self.volcanism < 1)
+    grid.volcanism = grid.volcanism*grid.rng.random(grid.size)*2
+    grid.height += grid.volcanism * \
+        grid.rng.random(grid.size)*(grid.volcanism >= 1) / \
+        grid.settings['VOLCANIC_FACTOR']
+    grid.volcanism = grid.volcanism * (grid.volcanism < 1)
 
 
-def plate_reset(self):
-    point_3d = self.rng.random((self.points, 3))*2 - 1
+def plate_reset(grid):
+    """
+    Resets the plates.
+    I.e. generate a new set of plates.
+    """
+
+    point_3d = grid.rng.random((grid.points, 3))*2 - 1
     # store these points in a lookup tree
     tree = KDTree(point_3d)
-    grid_value = np.array(tree.query(self.grid)[1])
+    grid_value = np.array(tree.query(grid.grid)[1])
     average_plate_value = []
-    for i in range(self.points):
+    for i in range(grid.points):
         average_plate_value.append(np.average(
-            self.plate_type[grid_value == i]))
+            grid.plate_type[grid_value == i]))
     average_plate_value = np.array(average_plate_value)
-    self.plate_type = average_plate_value[grid_value]
-    velocity = self.rng.random((self.points, 3)) / \
-        self.settings['PLATE_VELOCITY_FACTOR']
-    self.velocity = []
+    grid.plate_type = average_plate_value[grid_value]
+    velocity = grid.rng.random((grid.points, 3)) / \
+        grid.settings['PLATE_VELOCITY_FACTOR']
+    grid.velocity = []
     for i in grid_value:
-        self.velocity.append(Rotation.from_rotvec(velocity[i]))
+        grid.velocity.append(Rotation.from_rotvec(velocity[i]))
 
 
-def move_plates(self):
+def move_plates(grid):
+    """
+    Moves the plates.
+    """
+
     # Setup temporary storage
-    next_step_height = np.zeros(self.size)
-    next_step_velocity = self.velocity.copy()
-    next_plate_step = -np.ones(self.size)
-    for i in range(self.size):
+    next_step_height = np.zeros(grid.size)
+    next_step_velocity = grid.velocity.copy()
+    next_plate_step = -np.ones(grid.size)
+    for i in range(grid.size):
         # compute the new location of points
-        point = np.array([self.velocity[i].apply(self.grid[i])])
+        point = np.array([grid.velocity[i].apply(grid.grid[i])])
         # find index of new location
-        _, new_index = self.grid_tree.query(point)
+        _, new_index = grid.grid_tree.query(point)
         # add height to new location
-        next_step_height[new_index[0]] += self.height[i]
+        next_step_height[new_index[0]] += grid.height[i]
         # check if it is the dominant plate
-        if next_plate_step[new_index[0]] < self.plate_type[i]:
+        if next_plate_step[new_index[0]] < grid.plate_type[i]:
             # transferring information
-            next_step_velocity[new_index[0]] = self.velocity[i]
-            next_plate_step[new_index[0]] = self.plate_type[i]
-        elif self.plate_type[i] < 0 and next_plate_step[new_index[0]] > self.plate_type[i]:
+            next_step_velocity[new_index[0]] = grid.velocity[i]
+            next_plate_step[new_index[0]] = grid.plate_type[i]
+        elif grid.plate_type[i] < 0 and next_plate_step[new_index[0]] > grid.plate_type[i]:
             # to allow for simulated volcanism creating mountains and island chains
-            self.volcanism[new_index[0]] += 0.1
+            grid.volcanism[new_index[0]] += 0.1
             # to try and simulate trenches
             next_step_height[i] = 0
     # storing plate_type
-    self.height = next_step_height
-    self.velocity = next_step_velocity
-    self.plate_type = next_plate_step
+    grid.height = next_step_height
+    grid.velocity = next_step_velocity
+    grid.plate_type = next_plate_step
     # Ageing the plate
-    self.plate_type += self.settings['PLATE_AGEING']
+    grid.plate_type += grid.settings['PLATE_AGEING']
