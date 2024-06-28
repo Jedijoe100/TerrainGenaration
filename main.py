@@ -37,7 +37,7 @@ SETTINGS = {
     'POINT_NUMBER': 20,
     'DETAIL': 10000,
     'PLATE_STEPS': 2,
-    'SEED': 2,
+    'SEED': 3,
     'SEMI_MAJOR_AXIS': 1,
     'ECCENTRICITY': 0,
     'SOLAR_ENERGY': 6,

@@ -11,7 +11,7 @@ import shutil
 
 MINECRAFT_SETTINGS = {
     'HEIGHT_DIFF': 100,
-    'WORLD_RESOLUTION': (1000, 500),
+    'WORLD_RESOLUTION': (1000, 1000),
     'LOWEST_POINT': 50,
     'BLUR_FACTOR': 2
 }
@@ -72,7 +72,7 @@ def chunk_based_generation(level, resolution, grid, biomes):
             tem_biomes = minecraft_biome[chunk_x:chunk_x +
                                          16, chunk_z:chunk_z + 16]
             if np.shape(tem_biomes) == (16, 16):
-                chunk.biomes = Biomes(tem_biomes)
+                chunk.biomes = tem_biomes
             for x in range(16):
                 for z in range(16):
                     height_value = int(height_map[chunk_x+x, chunk_z+z])
