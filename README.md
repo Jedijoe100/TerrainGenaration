@@ -1,4 +1,7 @@
 The core concepts are there for a biome map, however, the values need to be refined to get realistic planetoids.
+![biomes_seed_2](https://github.com/Jedijoe100/TerrainGenaration/assets/30392586/7224a8ba-a2dc-4534-9bd2-b492ec4cfc64)
+![test_0](https://github.com/Jedijoe100/TerrainGenaration/assets/30392586/c9ce787d-b92b-4a80-83c2-ed3c35b4439e)
+This is the current best run.
 
 ## Method
 The aim is to generate a biome map for a planet.
