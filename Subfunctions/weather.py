@@ -55,14 +55,16 @@ def weather(grid, time_of_year, final):
     Computes the weather for a given time of year.
     Final allows for the data to be stored for biome checking.
     """
-
+    #dust updates
+    grid.dust[:grid.size] += grid.settings['DUST_FACTOR']*(grid.water_level <= 0)*(grid.height > grid.settings['SEA_LEVEL']) *(grid.dust[:grid.size]< 2)
+    grid.dust = np.minimum(grid.dust, 2)
     # update temperature
     temperature_update(grid, time_of_year)
     # update humidity
     grid.humidity[:grid.size] += (grid.height <= grid.settings['SEA_LEVEL']) / \
         grid.settings['HUMIDITY_FACTOR'] + \
-        grid.water_level/grid.settings['HUMIDITY_FACTOR']
-    grid.water_level -= grid.water_level/grid.settings['HUMIDITY_FACTOR']
+        grid.water_level/(grid.settings['HUMIDITY_FACTOR']*10)
+    #grid.water_level -= grid.water_level/(grid.settings['HUMIDITY_FACTOR']*10)
     # Transferring temperature to new point and humidity to new point (modifying temperature if going up or downhill)
     height_diff = np.zeros(grid.size*2)
     height_diff[:grid.size] = grid.height[grid.weather_index[:grid.size] %
@@ -70,13 +72,15 @@ def weather(grid, time_of_year, final):
     new_temperature = grid.temperature[grid.weather_index] - \
         height_diff/grid.settings['ALTITUDE_FACTOR']
     new_humidity = grid.humidity[grid.weather_index]
+    new_dust = grid.dust[grid.weather_index]
     # computing precipitation
-    precipitation = np.maximum(
-        0, new_humidity - (np.minimum(100, np.maximum(0, new_temperature - grid.settings['HEIGHT_TEMP_DROP']*grid.layer_2)))/100)
+    humidity_density = new_humidity*(np.exp(-(grid.temperature-20)/10)+1)
+    precipitation = (np.minimum(new_dust, humidity_density) > 1)*np.minimum(grid.humidity, new_dust)*grid.settings['RAIN_FACTOR']
     new_humidity -= precipitation * (precipitation > 0)
+    new_dust *= (precipitation <= 0)
     net_precipitation = precipitation[:grid.size] + precipitation[grid.size:]
     grid.water_level += net_precipitation * \
-        (net_precipitation > 0) * (grid.height > grid.water_level)
+        (net_precipitation > 0) * (grid.height > grid.settings['SEA_LEVEL'])
     # radiate temperature
     new_temperature -= ((new_humidity*100/(np.minimum(100,
                          np.maximum(0.0001, new_temperature)))) < grid.settings['CLOUD_POINT']) * grid.settings['TEMPERATURE_RADIATE']
@@ -84,6 +88,7 @@ def weather(grid, time_of_year, final):
     tem_temperature = new_temperature*grid.settings['BLUR_FACTOR']
     tem_humidity = new_humidity*grid.settings['BLUR_FACTOR']
     tem_precipitation = net_precipitation*grid.settings['BLUR_FACTOR']
+    tem_dust = new_dust *grid.settings['BLUR_FACTOR']
     for i in range(grid.size):
         tem_temperature[grid.adjacent_points[i]] += new_temperature[i] * \
             (1-grid.settings['BLUR_FACTOR'])/grid.settings['ADJACENT_FACTOR']
@@ -95,10 +100,15 @@ def weather(grid, time_of_year, final):
             (1-grid.settings['BLUR_FACTOR'])/grid.settings['ADJACENT_FACTOR']
         tem_precipitation[grid.adjacent_points[i]] += net_precipitation[i] * \
             (1-grid.settings['BLUR_FACTOR'])/grid.settings['ADJACENT_FACTOR']
+        tem_dust[grid.adjacent_points[i]] += new_dust[i] * \
+            (1-grid.settings['BLUR_FACTOR'])/grid.settings['ADJACENT_FACTOR']
+        tem_dust[grid.adjacent_points[i]+grid.size] += new_dust[i+grid.size] * \
+            (1-grid.settings['BLUR_FACTOR'])/grid.settings['ADJACENT_FACTOR']
     net_precipitation = tem_precipitation
     grid.temperature = tem_temperature
     grid.humidity = tem_humidity
     grid.net_precipitation += net_precipitation
+    grid.dust += tem_dust
     grid.weather_steps += 1
     # store temperature data
     if final:
@@ -130,7 +140,7 @@ def temperature_update(grid, time_of_year):
         np.sin(grid.grid_2d[:, 1])*np.tan(angle_between_sun) / \
         (2*np.sin(grid.grid_2d[:, 1]))
     # energy at each point
+    humidity_density = grid.humidity*(np.exp(-(grid.temperature-20)/10)+1)
     solar_energy = np.sin(np.minimum(np.maximum(
         grid.grid_2d[:, 1] - angle_between_sun, 0), np.pi))*grid.settings['SOLAR_ENERGY']*proportion_day/(4*np.pi*np.square(Distance))
-    grid.temperature[:grid.size] += (((grid.humidity[:grid.size]*100/(np.minimum(100,
-                                                                                 np.maximum(0.0001, grid.temperature[:grid.size])))) < grid.settings['CLOUD_POINT'])+1)*solar_energy/2
+    grid.temperature[:grid.size] += (np.minimum(grid.dust[:grid.size], humidity_density[:grid.size]) > grid.settings['CLOUD_POINT'])*solar_energy

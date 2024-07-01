@@ -14,7 +14,6 @@ def biomes(grid, biomes):
     """
 
     alt_categories = np.array([0, 0.3, 0.6, 0.8, 0.95, 1, 1.5, 10000])
-    alt_value = np.arange(0, 7, 1)
     alt_categories[:-1] *= grid.settings['SEA_LEVEL']
     # select minimum non negative height category
     alt_value = np.digitize(grid.height, alt_categories)
@@ -49,10 +48,13 @@ class Biomes:
         Returns the best biome id for each point.
         Accepts an array of points.
         """
-
+        print(alt_category)
         alt_satisfied = np.array([np.where(self.altitude_category[:,0] <= element, 1, 0)*np.where(element <= self.altitude_category[:,1], 1, 0) for element in alt_category]).transpose()
+        #for some reason we are getting ocean in the mountains.
+        print(alt_satisfied[:, 1])
         water_satisfied = np.array([self.water_minimum <= element[0] for element in element_vector]).transpose()
         fix_vector = np.matmul(self.biome_vector, element_vector.transpose())*alt_satisfied*water_satisfied
+        print(fix_vector[:, 1])
         return np.array([np.argmax(element) for element in fix_vector.transpose()])
     
 

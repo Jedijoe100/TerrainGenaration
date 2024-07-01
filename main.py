@@ -29,18 +29,18 @@ SETTINGS = {
     'PLATE_VELOCITY_FACTOR': 20,
     'WEATHER_STEPS': 200,
     'WIND_FACTOR': 50,
-    'TEMPERATURE_RADIATE': 0.005,
+    'TEMPERATURE_RADIATE': 0.01,
     'SEA_LEVEL': 0.5,
     'VOLCANIC_SPOTS': 5,
     'PLATE_AGEING': 0.01,
-    'HUMIDITY_FACTOR': 40,
+    'HUMIDITY_FACTOR': 20,
     'POINT_NUMBER': 20,
     'DETAIL': 10000,
     'PLATE_STEPS': 2,
-    'SEED': 3,
+    'SEED': 1,
     'SEMI_MAJOR_AXIS': 1,
     'ECCENTRICITY': 0,
-    'SOLAR_ENERGY': 6,
+    'SOLAR_ENERGY': 13,
     'ANGLE_FACTOR': 0.04,
     'PLATE_RESETS': 1,
     'CELL_NUMBER': 3,
@@ -49,7 +49,9 @@ SETTINGS = {
     'HEIGHT_TEMP_DROP': 5,
     'ADJACENT_FACTOR': 32,
     'ALTITUDE_FACTOR': 10,
-    'BLUR_FACTOR': 0.2
+    'BLUR_FACTOR': 0.2,
+    'RAIN_FACTOR': 0.9,
+    'DUST_FACTOR': 0.001
 }
 BIOMES = Biomes(os.path.join(FILE_PATH, DATA_DIRECTORY, "biomes.csv"))
 
@@ -101,6 +103,7 @@ class Stationary_Grid:
         self.water_flow = np.zeros(self.size)
         self.time_taken = 0
         _, self.adjacent_points = self.grid_tree.query(self.grid, self.settings['ADJACENT_FACTOR'])
+        self.dust = np.zeros(self.size*2)
         print(f"Grid Initialisation: {time.time()-start}s")
 
     def evolve(self):

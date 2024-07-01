@@ -102,8 +102,8 @@ def chunk_based_generation(level, resolution, grid, biomes):
                                      3:height_value+1, z] = blocks['gravel']
                     else:
                         chunk.blocks[x, height_value -
-                                     3:height_value, z] = blocks['gravel']
-                        chunk.blocks[x, height_value:processed_sea_level,
+                                     3:height_value+1, z] = blocks['gravel']
+                        chunk.blocks[x, height_value+1:processed_sea_level,
                                      z] = blocks['water']
                         if biome[x, z] == 6:
                             chunk.blocks[x, int(
@@ -118,7 +118,11 @@ def export_to_minecraft_world(self, file_path, biomes):
     Requires a minecraft world in a folder called biome_template and a folder called current_world.
     """
 
-    shutil.rmtree(os.path.join(file_path, '.\\current_world'))
+    try:
+        shutil.rmtree(os.path.join(file_path, '.\\current_world'))
+    except FileNotFoundError:
+        os.mkdir(os.path.join(file_path, '.\\current_world'))
+        shutil.rmtree(os.path.join(file_path, '.\\current_world'))
     shutil.copytree(os.path.join(file_path, '.\\biome_template'),
                     os.path.join(file_path, './current_world'))
     level = load_level('current_world')

@@ -1,33 +1,33 @@
 ID,NAME,COLOUR,MINECRAFT_BIOME,MIN_ALT_ZONE,MAX_ALT_ZONE,MIN_WATER,RAIN_0,RAIN_2,RAIN_5,RAIN_10,RAIN_20,PER_SUB_M10,PER_M10,PER_0,PER_10,PER_20,PER_30,PER_40,PER_50,PER_POST60
-0,Intertidal zone,#37cadd,ocean,4,4,0,1,1,1,1,1,0,0.1,1,0,1,0,1,1,1
-1,Neritic zone,#3777dd,deep_ocean,3,3,0,1,1,1,1,1,0,0.1,1,0,1,1,1,1,1
-2,Pelagic zone,#4a37dd,deep_ocean,2,2,0,1,1,1,1,1,0,0.1,1,1,1,1,1,1,1
-3,Benthis zone,#2957a0,deep_ocean,1,1,0,1,1,1,1,1,0,0.1,1,1,1,1,1,1,1
-4,Abyssal zone,#24477f,deep_ocean,0,0,0,1,1,1,1,1,0,0.1,1,1,1,1,1,1,1
-5,Coral Reef,#37ddae,warm_ocean,4,4,0,1,1,1,1,1,0,0.1,0,0,0,1,0,0,0
-6,Ice Sheet,#eeeeee,frozen_ocean,0,4,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0
-7,Tundra,#88dfce,snowy_plains,5,6,0,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.1,0,0,0,0,0,0
-8,Ice Caps,#ffffff,ice_spikes,5,6,0,0.5,0.5,0.5,0.5,0.5,1,0.5,0,0,0,0,0,0,0
-9,Taiga,#28a15a,taiga,5,6,0,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0,0,0,0,0
-10,Montane Grasslands and Shrublands,#c7b0ea,taiga,6,6,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0
-11,Alpine Tundra,#edecee,snowy_slopes,6,6,0,1,1,1,1,1,0.75,0.75,0.25,0.25,0,0,0,0,0
-12,Temperate Coniferous Forest,#005400,forest,5,5,0,1,1,1,1,1,0,0.2,0.3,0.3,0.2,0,0,0,0
-13,Temperate Broad Leaf and Mixed Forests,#71c934,forest,5,5,0,0,0,1,1,1,0,0.1,0.25,0.5,0.25,0,0,0,0
-14,"Temperate Grasslands, Savannas and Shrub Lands",#cedf88,plains,5,5,0,0,0.5,0.5,0,0,0,0.1,0.25,0.5,0.25,0,0,0,0
-15,Tropical Rainforest,#005c00,jungle,5,5,0,0,0,0,1,1,0,0,0,0.1,0.2,0.6,0.1,0,0
-16,Tropical Coniferous Forests,#66ff00,jungle,5,5,0,0,0.5,0.5,0,0,0,0,0,0.2,0.6,0.2,0,0,0
-17,Tropical seasonal forest,#42791b,jungle,5,5,0,0.5,0.5,0.5,0.5,0.5,0,0,0,0.5,0.5,0.5,0,0,0
-18,Montane Rain Forest,#7e976b,jungle,6,6,0,0,0,0,1,1,0,0,0,0.1,0.2,0.6,0.1,0,0
-19,Flooded Forest,#038f5d,swamp,5,5,0.5,0,0,0,1,1,0,0,0,0.1,0.2,0.6,0.1,0,0
-20,"Grasslands, Savannas and Shrub Lands",#fedd54,savanna,5,5,0,0.8,0.2,0,0,0,0,0,0,0,0.2,0.6,0.2,0,0
-21,Tropical and Subtropical Dry Broadleaf Forests,#d5ab00,birch_forest,5,5,0,0.7,0.1,0.2,0,0,0,0,0,0.1,0.2,0.6,0.1,0,0
-22,"Mediterainian Forests, Woodlands and Scrubs",#c97234,badlands,5,5,0,0.5,0.5,0,0,0,0,0,0,0,0.25,0.5,0.25,0,0
-23,Desert and Xeric Shrublands,#fef5d5,desert,5,5,0,1,0,0,0,0,0,0,0,0,0.25,0.5,0.2,0.05,0
-24,Steppe,#ffdd64,windswept_hills,5,6,0,0.8,0.8,0,0,0,0.1,0.1,0.1,0.2,0.2,0.1,0.1,0.1,0
-25,Flooded Grasslands and Savannas ,#adff98,river,5,5,0.5,0.8,0.2,0,0,0,0,0,0,0,0.2,0.6,0.2,0,0
-26,Wetlands,#006141,swamp,5,5,0.5,0,0.5,0.5,0,0,0,0,0.25,0.5,0.25,0,0,0,0
-27,Kelp Forest,#8a9efe,cold_ocean,3,4,0,1,1,1,1,1,0,0,0,1,0,0,0,0,0
-28,Lake,#002cff,river,5,6,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1
-29,Frozen Lake,#e9edff,frozen_river,5,6,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0
-30,Wasteland,#000000,nether_wastes,5,6,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1
-31,Cold Desert,#fef5d5,desert,5,6,0,1,0,0,0,0,0,0,0.4,0.4,0.2,0,0,0,0
+0,Intertidal zone,#37cadd,ocean,5,5,0,1,1,1,1,1,0,0.1,1,0,1,0,1,1,1
+1,Neritic zone,#3777dd,deep_ocean,4,4,0,1,1,1,1,1,0,0.1,1,0,1,1,1,1,1
+2,Pelagic zone,#4a37dd,deep_ocean,3,3,0,1,1,1,1,1,0,0.1,1,1,1,1,1,1,1
+3,Benthis zone,#2957a0,deep_ocean,2,2,0,1,1,1,1,1,0,0.1,1,1,1,1,1,1,1
+4,Abyssal zone,#24477f,deep_ocean,1,1,0,1,1,1,1,1,0,0.1,1,1,1,1,1,1,1
+5,Coral Reef,#37ddae,warm_ocean,5,5,0,1,1,1,1,1,0,0.1,0,0,0,1,0,0,0
+6,Ice Sheet,#eeeeee,frozen_ocean,1,5,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0
+7,Tundra,#88dfce,snowy_plains,6,7,0,0.5,0.5,0.5,0.5,0.5,0.4,0.5,0.1,0,0,0,0,0,0
+8,Ice Caps,#ffffff,ice_spikes,6,7,0,0.5,0.5,0.5,0.5,0.5,1,0.5,0,0,0,0,0,0,0
+9,Taiga,#28a15a,taiga,6,7,0,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0,0,0,0,0
+10,Montane Grasslands and Shrublands,#c7b0ea,taiga,7,7,0,1,1,1,1,1,0,0,1,1,0,0,0,0,0
+11,Alpine Tundra,#edecee,snowy_slopes,7,7,0,1,1,1,1,1,0.75,0.75,0.25,0.25,0,0,0,0,0
+12,Temperate Coniferous Forest,#005400,forest,6,6,0,1,1,1,1,1,0,0.2,0.3,0.3,0.2,0,0,0,0
+13,Temperate Broad Leaf and Mixed Forests,#71c934,forest,6,6,0,0,0,1,1,1,0,0.1,0.25,0.5,0.25,0,0,0,0
+14,"Temperate Grasslands, Savannas and Shrub Lands",#cedf88,plains,6,6,0,0,0.5,0.5,0,0,0,0.1,0.25,0.5,0.25,0,0,0,0
+15,Tropical Rainforest,#005c00,jungle,6,6,0,0,0,0,1,1,0,0,0,0.1,0.2,0.6,0.1,0,0
+16,Tropical Coniferous Forests,#66ff00,jungle,6,6,0,0,0.5,0.5,0,0,0,0,0,0.2,0.6,0.2,0,0,0
+17,Tropical seasonal forest,#42791b,jungle,6,6,0,0.5,0.5,0.5,0.5,0.5,0,0,0,0.5,0.5,0.5,0,0,0
+18,Montane Rain Forest,#7e976b,jungle,7,7,0,0,0,0,1,1,0,0,0,0.1,0.2,0.6,0.1,0,0
+19,Flooded Forest,#038f5d,swamp,6,6,0.5,0,0,0,1,1,0,0,0,0.1,0.2,0.6,0.1,0,0
+20,"Grasslands, Savannas and Shrub Lands",#fedd54,savanna,6,6,0,0.8,0.2,0,0,0,0,0,0,0,0.2,0.6,0.2,0,0
+21,Tropical and Subtropical Dry Broadleaf Forests,#d5ab00,birch_forest,6,6,0,0.7,0.1,0.2,0,0,0,0,0,0.1,0.2,0.6,0.1,0,0
+22,"Mediterainian Forests, Woodlands and Scrubs",#c97234,badlands,6,6,0,0.5,0.5,0,0,0,0,0,0,0,0.25,0.5,0.25,0,0
+23,Desert and Xeric Shrublands,#fef5d5,desert,6,6,0,1,0,0,0,0,0,0,0,0,0.25,0.5,0.2,0.05,0
+24,Steppe,#ffdd64,windswept_hills,6,7,0,0.8,0.8,0,0,0,0.1,0.1,0.1,0.2,0.2,0.1,0.1,0.1,0
+25,Flooded Grasslands and Savannas ,#adff98,river,6,6,0.5,0.8,0.2,0,0,0,0,0,0,0,0.2,0.6,0.2,0,0
+26,Wetlands,#006141,swamp,6,6,0.5,0,0.5,0.5,0,0,0,0,0.25,0.5,0.25,0,0,0,0
+27,Kelp Forest,#8a9efe,cold_ocean,4,5,0,1,1,1,1,1,0,0,0,1,0,0,0,0,0
+28,Lake,#002cff,river,6,7,1,1,1,1,1,1,0,0,1,1,1,1,1,1,1
+29,Frozen Lake,#e9edff,frozen_river,6,7,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0
+30,Wasteland,#000000,nether_wastes,6,7,0,1,1,1,1,1,0,0,0,0,0,0,0,0,1
+31,Cold Desert,#fef5d5,desert,6,7,0,1,0,0,0,0,0,0,0.4,0.4,0.2,0,0,0,0

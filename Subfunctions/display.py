@@ -15,15 +15,16 @@ def display_layers(grid, path):
     print(np.shape(xx), np.shape(yy))
     indices = grid.grid_tree.query(geographic_to_cartesian(
         np.array([xx.flatten(), yy.flatten()]).transpose()))[1]
-    fig, axs = plt.subplots(3, 2)
+    fig, axs = plt.subplots(4, 2)
     display_sub_axes(axs[0, 0], xx, yy, grid.height[indices].reshape(grid.resolution), 'Height Map')
     display_sub_axes(axs[0, 1], xx, yy, grid.humidity[indices].reshape(grid.resolution), 'Humidity Map')
     display_sub_axes(axs[1, 0], xx, yy, grid.net_precipitation[indices].reshape(grid.resolution), 'Precipitation Map')
     display_sub_axes(axs[1, 1], xx, yy, grid.water_level[indices].reshape(grid.resolution), 'Water Map')
     display_sub_axes(axs[2, 0], xx, yy, grid.temperature[indices].reshape(grid.resolution), 'Temperature Map')
     display_sub_axes(axs[2, 1], xx, yy, grid.temperature[indices+grid.size].reshape(grid.resolution), 'High Alt Temperature Map')
+    display_sub_axes(axs[3, 0], xx, yy, grid.dust[indices].reshape(grid.resolution), 'Dust Map')
     plt.savefig(
-        os.path.join(path, f"test_{grid.settings['ID']}.png"))
+        os.path.join(path, f"data_figure_{grid.settings['SEED']}.png"))
     plt.show()
 
 
