@@ -6,6 +6,7 @@ from amulet.api.errors import ChunkDoesNotExist
 from amulet.api.chunk import Chunk, Biomes
 from amulet.utils.world_utils import chunk_coords_to_block_coords
 from amulet import load_level
+from perlin_noise import PerlinNoise
 import os
 import shutil
 
@@ -47,7 +48,7 @@ def chunk_based_generation(level, resolution, grid, biomes):
     height_min = np.min(grid.height)
     height_dispersion = (np.max(grid.height)-height_min)
     blocks = generate_block_references(
-        level, ['stone', 'dirt', 'grass_block', 'gravel', 'water', 'sand', 'snow_block', 'packed_ice'])
+        level, ['stone', 'dirt', 'grass_block', 'gravel', 'water', 'sand', 'snow_block', 'packed_ice', 'terracotta'])
     processed_sea_level = MINECRAFT_SETTINGS['LOWEST_POINT']+MINECRAFT_SETTINGS['HEIGHT_DIFF']*(
         grid.settings['SEA_LEVEL']-height_min)/height_dispersion
     xx, yy = np.meshgrid(np.linspace(0, 2*np.pi, chunk_grid[0]*16), np.linspace(
@@ -60,6 +61,8 @@ def chunk_based_generation(level, resolution, grid, biomes):
     water_level = grid.water_level[indices] * MINECRAFT_SETTINGS['HEIGHT_DIFF']/height_dispersion
     biome = grid.biome[indices]
     minecraft_biome = biomes.biome_correspond[biome]
+    noise = PerlinNoise(octaves=1, seed=grid.settings['SEED'])
+    detail_noise = PerlinNoise(octaves=32, seed=grid.settings['SEED']+1) 
     for cx in range(chunk_grid[0]-1):
         for cz in range(chunk_grid[1]-1):
             try:
@@ -84,8 +87,13 @@ def chunk_based_generation(level, resolution, grid, biomes):
                             chunk.blocks[x, height_value+1:height_value +
                                          1+int(water_level[chunk_x+x, chunk_z+z]), z]
                         elif biome[chunk_x+x, chunk_z + z] in [23, 31]:
-                            chunk.blocks[x, height_value -
-                                         3:height_value+1, z] = blocks['sand']
+                            if noise([(chunk_x + x)/(chunk_grid[0]*16), (chunk_z + z)/(chunk_grid[1]*16)]) > 0 and np.floor(detail_noise([(chunk_x + x)/(chunk_grid[0]*16), (chunk_z + z)/(chunk_grid[1]*60)])*10) >= 1:
+                                chunk.blocks[x, height_value -
+                                            3:height_value+np.floor(detail_noise([chunk_x + x, chunk_z + z])*60), z] = blocks['terracotta']
+                            else:
+                                chunk.blocks[x, height_value -
+                                            3:height_value+1, z] = blocks['sand']
+
                         elif biome[chunk_x + x, chunk_z + z] in [8, 7]:
                             chunk.blocks[x, height_value -
                                          3:height_value, z] = blocks['dirt']
@@ -101,10 +109,14 @@ def chunk_based_generation(level, resolution, grid, biomes):
                         chunk.blocks[x, height_value -
                                      3:height_value+1, z] = blocks['gravel']
                     else:
-                        chunk.blocks[x, height_value -
-                                     3:height_value+1, z] = blocks['gravel']
+                        if noise([(chunk_x + x)/(chunk_grid[0]*16), (chunk_z + z)/(chunk_grid[1]*16)]) < 0:
+                            chunk.blocks[x, height_value -
+                                        3:height_value+1, z] = blocks['gravel']
+                        else:
+                            chunk.blocks[x, height_value -
+                                            3:height_value+1, z] = blocks['sand']
                         chunk.blocks[x, height_value+1:processed_sea_level,
-                                     z] = blocks['water']
+                                    z] = blocks['water']
                         if biome[x, z] == 6:
                             chunk.blocks[x, int(
                                 processed_sea_level)-1, z] = blocks['packed_ice']
@@ -119,12 +131,12 @@ def export_to_minecraft_world(self, file_path, biomes):
     """
 
     try:
-        shutil.rmtree(os.path.join(file_path, '.\\current_world'))
+        shutil.rmtree(os.path.join(file_path, 'current_world'))
     except FileNotFoundError:
-        os.mkdir(os.path.join(file_path, '.\\current_world'))
-        shutil.rmtree(os.path.join(file_path, '.\\current_world'))
-    shutil.copytree(os.path.join(file_path, '.\\biome_template'),
-                    os.path.join(file_path, './current_world'))
+        os.mkdir(os.path.join(file_path, 'current_world'))
+        shutil.rmtree(os.path.join(file_path, 'current_world'))
+    shutil.copytree(os.path.join(file_path, 'biome_template'),
+                    os.path.join(file_path, 'current_world'))
     level = load_level('current_world')
     for biome in biomes.minecraft_biomes:
         level.biome_palette.register(f'universal_minecraft:{biome}')
